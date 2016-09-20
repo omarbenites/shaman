@@ -1,4 +1,4 @@
-options(shiny.sanitize.errors = TRUE)
+options(shiny.sanitize.errors = FALSE)
 if (!require("Rcpp")){
   install.packages("Rcpp")
 }

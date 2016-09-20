@@ -1,4 +1,5 @@
 source("css/owncss.R")
+options(shiny.sanitize.errors = FALSE)
 source("Rfunctions/Data_Management.R")
 if(!require(shinydashboard)){
   installed.packages("shinydashboard")

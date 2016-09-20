@@ -1,3 +1,4 @@
+options(shiny.sanitize.errors = FALSE)
 source('LoadPackages.R')
 renderDataTable <- DT::renderDataTable
 dataTableOutput <- DT::dataTableOutput

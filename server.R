@@ -1,5 +1,5 @@
 shinyServer(function(input, output,session) {
-
+  
   hide(id = "loading-content", anim = TRUE, animType = "fade",time=1.5)
   hide(id = "loading-content-bar", anim = TRUE, animType = "fade",time=1.5)
   #####################################################
@@ -20,7 +20,7 @@ shinyServer(function(input, output,session) {
   ## JSON name for masque
   curdir  = getwd()
   json_name = tempfile(pattern = "file", tmpdir = paste(curdir,"www","masque","todo",sep= .Platform$file.sep),  fileext = ".json")
-
+  
   ## Pass for MASQUE
   pass = gsub("file","",basename(file_path_sans_ext(json_name)))
   
@@ -41,7 +41,7 @@ shinyServer(function(input, output,session) {
     inFile <- input$fileCounts
     if (is.null(inFile) && is.null(values$count_table_masque)) return(NULL)
     #if (is.null(inFile)) return(NULL)
-
+    
     if (!is.null(values$count_table_masque) && file.exists(values$count_table_masque)){
       tryCatch(read.csv(values$count_table_masque,sep="\t",header=TRUE,check.names=FALSE)->data,
                error=function(e) sendSweetAlert(messageId="ErrorCounts",
@@ -61,7 +61,7 @@ shinyServer(function(input, output,session) {
       if(!TRUE%in%duplicated(data[,1])) rownames(data)=data[,1];data=data[,-1]
       try(round(data, 0)->data, silent=T)
     }
-
+    
     return(as.data.frame(data))
   })
   
@@ -71,17 +71,17 @@ shinyServer(function(input, output,session) {
   dataInputTaxo <-reactive({ 
     
     inFile <- input$fileTaxo
-
+    
     if (is.null(inFile) && is.null(values$rdp_annot_masque)) return(NULL)
     #if (is.null(inFile)) return(NULL)
-
+    
     if(input$TypeTaxo=="Table" && !is.null(inFile)) 
     {
       tryCatch(read.csv(inFile$datapath,sep=input$septaxo,header=TRUE)->data,
                error=function(e) sendSweetAlert(messageId="ErrorTaxo",
                                                 title = "Oops",
                                                 text=paste("Your file can not be read in SHAMAN.\n \n",e),type ="error"))
-    
+      
       ## Rownames
       if(!is.null(data))
       {
@@ -126,14 +126,14 @@ shinyServer(function(input, output,session) {
     
     data = NULL
     inFile <- input$fileBiom
-
+    
     if (!is.null(inFile) && is.null(values$biom_masque)){
       tryCatch(read_biom(inFile$datapath)->data,
                error=function(e) sendSweetAlert(messageId="ErrorBiom1",
                                                 title = "Oops",
                                                 text=paste("Your file can not be read in SHAMAN.\n \n",e),type ="error"))
-    
-      }
+      
+    }
     if (!is.null(values$biom_masque) && file.exists(values$biom_masque)){ 
       tryCatch(read_biom(values$biom_masque)->data,
                error=function(e) sendSweetAlert(messageId="ErrorBiom2",
@@ -153,14 +153,14 @@ shinyServer(function(input, output,session) {
   observeEvent(input$fileBiom,{
     values$biom_masque=NULL;
   })
-
+  
   
   ## Unifrac File (tree)
   dataInputTree <-reactive({ 
     
     data = NULL
     inFile <- input$fileTree
-
+    
     if (!is.null(inFile) && is.null(values$tree_masque)) {
       try(read.tree(inFile$datapath)->data, silent=T)
       CheckTree = CheckTreeFile(data)
@@ -176,7 +176,7 @@ shinyServer(function(input, output,session) {
       try(readLines(values$tree_masque)->treeseq, silent=T)
       return(list(data=data, Error=CheckTree$Error, Warning=CheckTree$Warning, treeseq=treeseq))
     }
-
+    
   })
   
   
@@ -205,8 +205,49 @@ shinyServer(function(input, output,session) {
     } 
     return(res)
   })
-
   
+  observe({
+    val <- input$annotationKingdomthreshold
+    # Control the value, min, max, and step.
+    # Step size is 2 when input value is even; 1 when value is odd.
+    updateSliderInput(session, "annotationPhylumthreshold", value = input$annotationPhylumthreshold,
+                      min = val, max = 1, step = 0.005)
+  })
+  observe({
+    val <- input$annotationPhylumthreshold[2]
+    # Control the value, min, max, and step.
+    # Step size is 2 when input value is even; 1 when value is odd.
+    updateSliderInput(session, "annotationClassthreshold", value = input$annotationClassthreshold,
+                      min = val, max = 1, step = 0.005)
+  })
+  observe({
+    val <- input$annotationClassthreshold[2]
+    # Control the value, min, max, and step.
+    # Step size is 2 when input value is even; 1 when value is odd.
+    updateSliderInput(session, "annotationOrderthreshold", value = input$annotationOrderthreshold,
+                      min = val, max = 1, step = 0.005)
+  })
+  observe({
+    val <- input$annotationOrderthreshold[2]
+    # Control the value, min, max, and step.
+    # Step size is 2 when input value is even; 1 when value is odd.
+    updateSliderInput(session, "annotationFamilythreshold", value = input$annotationFamilythreshold,
+                      min = val, max = 1, step = 0.005)
+  })
+  observe({
+    val <- input$annotationFamilythreshold[2]
+    # Control the value, min, max, and step.
+    # Step size is 2 when input value is even; 1 when value is odd.
+    updateSliderInput(session, "annotationGenusthreshold", value = input$annotationGenusthreshold,
+                      min = val, max = 1, step = 0.005)
+  })
+  observe({
+    val <- input$annotationGenusthreshold[2]
+    # Control the value, min, max, and step.
+    # Step size is 2 when input value is even; 1 when value is odd.
+    updateSliderInput(session, "annotationSpeciethreshold", value = input$annotationSpeciethreshold,
+                      min = val, max = 1, step = 0.005)
+  })
   ## Input data
   dataInput <-reactive({ 
     
@@ -251,17 +292,17 @@ shinyServer(function(input, output,session) {
     }
     
     
-
-#     if(input$FileFormat=="fileRData")
-#     {
-#       inFile <- input$fileRData
-#       load(inFile)
-#       if(!is.null(inputData)){
-#         data = inputData$data
-#         check = inputData$check
-#         percent = inputData$percent
-#       }
-#     }
+    
+    #     if(input$FileFormat=="fileRData")
+    #     {
+    #       inFile <- input$fileRData
+    #       load(inFile)
+    #       if(!is.null(inputData)){
+    #         data = inputData$data
+    #         check = inputData$check
+    #         percent = inputData$percent
+    #       }
+    #     }
     
     return(list(data=data,check=check,percent=percent))
   })
@@ -321,36 +362,42 @@ shinyServer(function(input, output,session) {
     CT_noNorm = NULL
     CT_Norm = NULL
     ChTM = NULL
+    ChMC = NULL
     data = isolate(dataInput()$data)
     target = isolate(values$TargetWorking)
     labeled= isolate(values$labeled)
     taxo = isolate(input$TaxoSelect)
     withProgress(
-    if(!is.null(data$counts) && !is.null(data$taxo) && nrow(data$counts)>0 && nrow(data$taxo)>0 && !is.null(taxo) && taxo!="..." && !is.null(target)) 
-    {
-      design = GetDesign(isolate(input),target)
-      ChTM = CheckTargetModel(input,target,labeled,data$counts)$Error
-      if(!is.null(design) && is.null(ChTM))
+      if(!is.null(data$counts) && !is.null(data$taxo) && nrow(data$counts)>0 && nrow(data$taxo)>0 && !is.null(taxo) && taxo!="..." && !is.null(target)) 
       {
-        tmp = isolate(GetCountsMerge(input,data,taxo,target,design))
-        counts = tmp$counts
-        ## Filtering the counts
-        if(isolate(input$AddFilter) && !is.null(isolate(input$SliderThSamp)) && !is.null(isolate(input$SliderThAb)))
+        design = GetDesign(isolate(input),target)
+        print(design)
+        ChTM = CheckTargetModel(input,target,labeled,data$counts)$Error
+        if(!is.null(design) && is.null(ChTM))
         {
-          ind.filter =Filtered_feature(counts,isolate(input$SliderThSamp),isolate(input$SliderThAb))$ind
-          counts = counts[-ind.filter,]
+          tmp = isolate(GetCountsMerge(input,data,taxo,target,design))
+          #ChMC = tmp$Error
+          #if (!is.null(ChMC))
+          #{
+            counts = tmp$counts
+            ## Filtering the counts
+            if(isolate(input$AddFilter) && !is.null(isolate(input$SliderThSamp)) && !is.null(isolate(input$SliderThAb)))
+            {
+              ind.filter =Filtered_feature(counts,isolate(input$SliderThSamp),isolate(input$SliderThAb))$ind
+              counts = counts[-ind.filter,]
+            }
+            CheckTarget = tmp$CheckTarget
+            #target = tmp$target
+            #labeled = tmp$labeled
+            normFactors = tmp$normFactors
+            ## OTU table, norm and no norm
+            CT_noNorm = tmp$CT_noNorm
+            CT_Norm = tmp$CT_Norm
+          #}
         }
-        CheckTarget = tmp$CheckTarget
-        #target = tmp$target
-        #labeled = tmp$labeled
-        normFactors = tmp$normFactors
-        ## OTU table, norm and no norm
-        CT_noNorm = tmp$CT_noNorm
-        CT_Norm = tmp$CT_Norm
       }
-    }
-    ,message="Merging the counts ...")
-    return(list(counts=counts,CheckTarget=CheckTarget,normFactors=normFactors,CT_noNorm=CT_noNorm, CT_Norm=CT_Norm))
+      ,message="Merging the counts ...")
+    return(list(counts=counts,CheckTarget=CheckTarget,normFactors=normFactors,CT_noNorm=CT_noNorm, CT_Norm=CT_Norm, Error = ChMC))
     #return(list(counts=counts,target=target,labeled=labeled,normFactors=normFactors,CT_noNorm=CT_noNorm))
   })
   
@@ -403,7 +450,7 @@ shinyServer(function(input, output,session) {
     check = tmp$check
     cond = (!is.null(data$counts) && nrow(data$counts)>0 && !is.null(data$taxo) && nrow(data$taxo)>0)
     res = shinydashboard::valueBox(paste0(0, "%"),h6(strong("Annotated features")), color = "light-blue",width=NULL,icon = icon("list"))
-
+    
     if(cond)
     {
       percent = round(100*tmp$percent,2)
@@ -459,7 +506,7 @@ shinyServer(function(input, output,session) {
     plot_filter(counts,input$SliderThSamp,input$SliderThAb,type="Abundance")
     
   })
-    
+  
   output$Plot_ThSamp <- renderPlot({
     counts = dataMergeCounts()$counts
     ## output of plot_filter is ggplot class
@@ -489,22 +536,22 @@ shinyServer(function(input, output,session) {
     CheckOK = (is.null(check$CheckCounts$Error) && is.null(check$CheckTaxo$Error)  && is.null(check$CheckPercent))
     if(!is.null(data$counts) && !is.null(data$taxo) && nrow(data$counts)>0 && nrow(data$taxo)>0 && CheckOK)
     {
-
+      
       sidebarMenu(id = "side",
-        menuItem("Statistical analysis",
-                 menuSubItem("Run differential analysis",tabName="RunDiff"),
-                 menuSubItem("Diagnostic plots",tabName="DiagPlotTab"),
-                 menuSubItem("Tables",tabName="TableDiff"),
-                 icon = icon("bar-chart-o"), tabName = "AnaStat"
-        ),
-        menuItem("Visualization",icon = icon("area-chart"),
-                 menuSubItem("Global views",tabName="GlobVisu"),
-                 menuSubItem("Comparison plots",tabName="CompPlot"),
-                 tabName = "Visu")
-        #menuItem("Perspective plots", icon = icon("pie-chart"), tabName = "Krona")
+                  menuItem("Statistical analysis",
+                           menuSubItem("Run differential analysis",tabName="RunDiff"),
+                           menuSubItem("Diagnostic plots",tabName="DiagPlotTab"),
+                           menuSubItem("Tables",tabName="TableDiff"),
+                           icon = icon("bar-chart-o"), tabName = "AnaStat"
+                  ),
+                  menuItem("Visualization",icon = icon("area-chart"),
+                           menuSubItem("Global views",tabName="GlobVisu"),
+                           menuSubItem("Comparison plots",tabName="CompPlot"),
+                           tabName = "Visu")
+                  #menuItem("Perspective plots", icon = icon("pie-chart"), tabName = "Krona")
       )
     } else{ sidebarMenu(id = "side",NULL)}
-
+    
   })
   
   
@@ -528,10 +575,10 @@ shinyServer(function(input, output,session) {
     #resDiff = ResDiffAnal()
     #BaseContrast = read.table(namesfile,header=TRUE)
     GetData_venn(input,input$ContrastList_table_FC,read.table(namesfile,header=TRUE),ResDiffAnal())$df.tot,
-  #}
-   options = list(lengthMenu = list(c(10, 50, -1), c('10', '50', 'All')),
-                    pageLength = 10,scrollX=TRUE, processing=FALSE
-  ))
+    #}
+    options = list(lengthMenu = list(c(10, 50, -1), c('10', '50', 'All')),
+                   pageLength = 10,scrollX=TRUE, processing=FALSE
+    ))
   
   
   ## Taxonomy table
@@ -549,23 +596,23 @@ shinyServer(function(input, output,session) {
     res=NULL
     if(!is.null(tree))
     {
-     res = tabBox(width = NULL, selected = "Count table",
-             tabPanel("Count table",DT::dataTableOutput("DataCounts")),
-             tabPanel("Taxonomy",DT::dataTableOutput("DataTaxo")),
-             tabPanel("Summary",h5(strong("Percentage of annotation")),htmlOutput("SummaryView"),
-                      br(),h5(strong("Number of features by level:")),plotOutput("SummaryViewBarplot",width = 1200,height=500)),
-             tabPanel("Phylogeny", PhyloTreeMetaROutput('PhyloTreeMetaR'))
-     )
-            
+      res = tabBox(width = NULL, selected = "Count table",
+                   tabPanel("Count table",DT::dataTableOutput("DataCounts")),
+                   tabPanel("Taxonomy",DT::dataTableOutput("DataTaxo")),
+                   tabPanel("Summary",h5(strong("Percentage of annotation")),htmlOutput("SummaryView"),
+                            br(),h5(strong("Number of features by level:")),plotOutput("SummaryViewBarplot",width = 1200,height=500)),
+                   tabPanel("Phylogeny", PhyloTreeMetaROutput('PhyloTreeMetaR'))
+      )
+      
     }
     else if(is.null(tree))
     {
-     res = tabBox(width = NULL,selected = "Count table",
-             tabPanel("Count table",DT::dataTableOutput("DataCounts")),
-             tabPanel("Taxonomy",DT::dataTableOutput("DataTaxo")),
-             tabPanel("Summary",h5(strong("Percentage of annotation")),htmlOutput("SummaryView"),
-                      br(),h5(strong("Number of features by level:")),plotOutput("SummaryViewBarplot",width = 1200,height=500))
-             )
+      res = tabBox(width = NULL,selected = "Count table",
+                   tabPanel("Count table",DT::dataTableOutput("DataCounts")),
+                   tabPanel("Taxonomy",DT::dataTableOutput("DataTaxo")),
+                   tabPanel("Summary",h5(strong("Percentage of annotation")),htmlOutput("SummaryView"),
+                            br(),h5(strong("Number of features by level:")),plotOutput("SummaryViewBarplot",width = 1200,height=500))
+      )
       
     }
     return(res)
@@ -575,7 +622,7 @@ shinyServer(function(input, output,session) {
     data=dataInput()$data
     if(!is.null(data$counts) && !is.null(data$taxo) && nrow(data$counts)>0 && nrow(data$taxo)>0)
     {
-        showElement("tabboxdata_col",anim=TRUE)
+      showElement("tabboxdata_col",anim=TRUE)
     } else hideElement("tabboxdata_col",anim=TRUE)
     
   })
@@ -591,7 +638,7 @@ shinyServer(function(input, output,session) {
     counts = data$counts
     check = tmp$check
     cond = (!is.null(data$counts) && nrow(data$counts)>0 && !is.null(data$taxo) && nrow(data$taxo)>0 && is.null(check$CheckTaxo$Error) && is.null(check$CheckCounts$Error))
-  
+    
     res = NULL
     if(cond)
     {
@@ -631,7 +678,7 @@ shinyServer(function(input, output,session) {
     counts = data$counts
     check = tmp$check
     cond = (!is.null(data$counts) && nrow(data$counts)>0 && !is.null(data$taxo) && nrow(data$taxo)>0 && is.null(check$CheckTaxo$Error) && is.null(check$CheckCounts$Error))
-
+    
     res = NULL
     if(cond)
     {
@@ -666,7 +713,7 @@ shinyServer(function(input, output,session) {
     
     ## Read the data
     try(read.csv(inFile$datapath,sep=input$septarget,header=TRUE)->data,silent=TRUE)
-    
+
     if(!is.null(data))
     {
       data = as.data.frame(data)
@@ -686,6 +733,7 @@ shinyServer(function(input, output,session) {
         ind_num = which(sapply(as.data.frame(data[,-1]),is.numeric)) + 1
         if(length(ind_num)>0){
           data_tmp =cbind( as.data.frame(apply(as.data.frame(data[,-ind_num]),2,gsub,pattern = "-",replacement = ".")),data[,ind_num])
+          #data_tmp =cbind( as.data.frame(as.data.frame(data[,-ind_num])),data[,ind_num])
           colnames(data_tmp) = c(colnames(data)[-ind_num],colnames(data)[ind_num])
           data = data_tmp
         }
@@ -693,8 +741,8 @@ shinyServer(function(input, output,session) {
       }
       
       values$TargetWorking = as.data.frame(data)
-#       ind_sel = Target_selection()
-#       if(length(ind))
+      #       ind_sel = Target_selection()
+      #       if(length(ind))
       # target = as.data.frame(apply(target,2,gsub,pattern = "-",replacement = "."))
       
       #ord = order(rownames(data))
@@ -712,7 +760,7 @@ shinyServer(function(input, output,session) {
     # return(list(target = target, labeled=labeled))
   })
   
-
+  
   
   
   #############################################################
@@ -728,13 +776,13 @@ shinyServer(function(input, output,session) {
     inFiles <- input$dir
     
     if (!is.null(inFiles)){
-    # values$fastq_names_only = unique(paste(values$fastq_names_only,inFiles$name))
-    values$paths_fastq_tmp = rbind(isolate(values$paths_fastq_tmp),inFiles)
-    values$fastq_names_only = isolate(unique(values$paths_fastq_tmp[,"name"]))
+      # values$fastq_names_only = unique(paste(values$fastq_names_only,inFiles$name))
+      values$paths_fastq_tmp = rbind(isolate(values$paths_fastq_tmp),inFiles)
+      values$fastq_names_only = isolate(unique(values$paths_fastq_tmp[,"name"]))
     }
   })
   
-
+  
   
   ## Create a fasta file containing the contaminant
   CreateFasta <- reactive({
@@ -755,9 +803,9 @@ shinyServer(function(input, output,session) {
     #activate check_mail
     CMP = CheckMasque(input, values,check_mail = TRUE)
     Error = CMP$Error
-
+    
     isJSONalreadyExist = file.exists(paste(values$curdir,"www","masque","doing",basename(json_name),sep= .Platform$file.sep))
-
+    
     if(is.null(Error) && !isJSONalreadyExist)
     {
       CreateFasta()
@@ -766,8 +814,8 @@ shinyServer(function(input, output,session) {
       # home <- normalizePath("~")
       home <- ""
       # path_glob = file.path(home, paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
-    
-    
+      
+      
       ## Paired-end
       if(input$PairedOrNot=="y"){
         cmp = 0
@@ -779,12 +827,12 @@ shinyServer(function(input, output,session) {
           
           if(dir.exists(pathToR1)){file.remove(list.files(pathToR1,full.names =TRUE))} else dir.create(pathToR1)
           if(dir.exists(pathToR2)){file.remove(list.files(pathToR2,full.names =TRUE))} else dir.create(pathToR2)
-        for(i in values$R1fastQ){
-          ind=which(i==values$paths_fastq_tmp[,"name"])[1]
-          file.rename(from=values$paths_fastq_tmp[,"datapath"][ind], to=paste(tmp,"Masque_files_R1",i,sep= .Platform$file.sep))
-          cmp = cmp +1
-          incProgress(cmp/nfiles, detail = "Forward fastq files...")
-        }
+          for(i in values$R1fastQ){
+            ind=which(i==values$paths_fastq_tmp[,"name"])[1]
+            file.rename(from=values$paths_fastq_tmp[,"datapath"][ind], to=paste(tmp,"Masque_files_R1",i,sep= .Platform$file.sep))
+            cmp = cmp +1
+            incProgress(cmp/nfiles, detail = "Forward fastq files...")
+          }
           for(i in values$R2fastQ){
             ind=which(i==values$paths_fastq_tmp[,"name"])[1]
             file.rename(from=values$paths_fastq_tmp[,"datapath"][ind], to=paste(tmp,"Masque_files_R2",i,sep= .Platform$file.sep))
@@ -799,7 +847,7 @@ shinyServer(function(input, output,session) {
         nfiles = length(values$fastq_names_only)
         
         withProgress(message = 'Uploading files...', value = 0, {
-            
+          
           pathTo = paste(tmp,"Masque_files",sep=.Platform$file.sep)
           
           if(dir.exists(pathTo)){file.remove(list.files(pathTo,full.names =TRUE))} else dir.create(pathTo)
@@ -855,9 +903,9 @@ shinyServer(function(input, output,session) {
     return(res)
   })
   
-
-
-
+  
+  
+  
   ## Remove FastQ function
   RemoveFastQ <-eventReactive(input$RemoveFastQbut,{
     
@@ -905,7 +953,7 @@ shinyServer(function(input, output,session) {
         ## If some are only R1 or R2
         tmpR1 = gsub(input$R1files,x=values$R1fastQ,""); tmpR2 = gsub(input$R2files,x=values$R2fastQ,"")
         values$R1fastQ = values$R1fastQ[tmpR1%in%tmpR2];values$R2fastQ = values$R2fastQ[tmpR2%in%tmpR1]
-
+        
         ## Update the files lists
         updateSelectInput(session, "R1filesList","",values$R1fastQ); updateSelectInput(session, "R2filesList","",values$R2fastQ)
       } else{updateSelectInput(session, "R1filesList","","");updateSelectInput(session, "R2filesList","","")}
@@ -945,10 +993,10 @@ shinyServer(function(input, output,session) {
   
   RemoveFastQ_R1R2_all <-eventReactive(input$LoadFiles,{
     
-      values$R1fastQ = NULL
-      updateSelectInput(session, "R1filesList","","")
-      values$R2fastQ = NULL
-      updateSelectInput(session, "R2filesList","","")
+    values$R1fastQ = NULL
+    updateSelectInput(session, "R1filesList","","")
+    values$R2fastQ = NULL
+    updateSelectInput(session, "R2filesList","","")
     
   })
   
@@ -978,33 +1026,33 @@ shinyServer(function(input, output,session) {
     toggleState("box-match",condition = (input$PairedOrNot=="y"))
   })
   
-
+  
   output$InfoMasque<- renderUI({
     input$submit
-
+    
     CMP = isolate(CheckMasque(input, values, check_mail = FALSE))
     
     if(!is.null(CMP$Error) && input$submit>0) {
       toastr_error(title="Error",message=HTML(CMP$Error),closeButton = TRUE,position ="bottom-right",preventDuplicates = TRUE,newestOnTop = TRUE,
                    progressBar = FALSE,showDuration = 300,showMethod="show",timeOut = 10000)
     }
-
+    
   })
-
-
+  
+  
   output$InfoMasqueHowTo<- renderUI({
     input$submit
-
+    
     CMP = isolate(CheckMasque(input, values, check_mail = FALSE))
-
+    
     if(!is.null(CMP$HowTo) && input$submit>0) {
       toastr_success(title="How to",message=HTML(CMP$HowTo),closeButton = TRUE,position ="bottom-right",preventDuplicates = TRUE,newestOnTop = TRUE,
                      progressBar = FALSE,showDuration = 300,showMethod="show",timeOut = 10000)
     }
-
+    
   })
-
-
+  
+  
   
   # observeEvent(input$submit,{
   #   
@@ -1027,7 +1075,7 @@ shinyServer(function(input, output,session) {
   #   
   # })
   
- #########    ICONS   ################ 
+  #########    ICONS   ################ 
   
   
   output$spinner_anim <- renderUI(
@@ -1090,7 +1138,7 @@ shinyServer(function(input, output,session) {
   output$underhill_icon <- renderUI(
     htmltools::HTML('<img src="icons/underhill.png" alt="dna" style="width:80px;height:80px;">')
   )
-
+  
   #####################################
   
   
@@ -1143,12 +1191,12 @@ shinyServer(function(input, output,session) {
     # FastqLoad()
     res = NULL
     res = infoBox("Fastq files","Load the fastq files ", color = "light-blue",width=NULL,icon = icon("play"),fill = TRUE)
-
+    
     if(!is.null(input$dir)){
       if(length(unique(values$fastq_names_only))==0) res = infoBox("Fastq files","Select at least one fastq file", color = "red",width=NULL,icon = icon("play"),fill = TRUE)
       if(length(unique(values$fastq_names_only))>0) res = infoBox("Fastq files",paste(length(unique(values$fastq_names_only)), "files are loaded"), color = "green",width=NULL,icon = icon("play"),fill = TRUE)
     }
-     return(res)
+    return(res)
   })
   
   
@@ -1190,11 +1238,11 @@ shinyServer(function(input, output,session) {
   
   ## Check masque progress
   observe({
-
+    
     Timer()
     CMP = isolate(CheckMasque(input, values, check_mail=FALSE))
     Error = CMP$Error
-
+    
     if(is.null(Error) && isolate(values$num)<100){
       
       progress_file = paste(values$curdir,"www","masque","doing",paste(basename(file_path_sans_ext(json_name)),"_progress",".txt",sep=""),sep= .Platform$file.sep)
@@ -1212,7 +1260,7 @@ shinyServer(function(input, output,session) {
     }
     #CHANGEMENT DE COULEUR BORDEL
     else if(!is.null(Error) && isolate(values$num)>=1) values$error_progress = TRUE
-})
+  })
   
   
   observe({
@@ -1302,14 +1350,43 @@ shinyServer(function(input, output,session) {
     }
   })
   
+  ## the same from home
+  observeEvent(input$Check_project_home,{
+    values$masque_key = input$password_home
+    
+    PS = Project_status(values$masque_key,values$curdir)
+    
+    if(!is.null(input$password_home) && input$password_home!="" && !PS$passOK){ 
+      removeCssClass(class = 'pwdGREEN', selector = '#password_home')
+      addCssClass(class = 'pwdRED', selector = '#password_home')
+    }
+    
+    if(!is.null(input$password_home) && input$password_home!="" && PS$passOK){
+      removeCssClass(class = 'pwdRED', selector = '#password_home')
+      addCssClass(class = 'pwdGREEN', selector = '#password_home')
+      hideElement("masque-form",anim=TRUE)
+      hideElement("masque-infobox",anim=TRUE)
+      hideElement("boxsum",anim=TRUE)
+      showElement("reload-project",anim=TRUE)
+      hideElement("project_over",anim=TRUE)
+      hideElement("pass",anim=TRUE)
+      #showElement("MasqueToShaman",anim=TRUE)
+    }
+    if(is.null(input$password_home) || input$password_home==""){    
+      removeCssClass(class = 'pwdRED', selector = '#password_home')
+      removeCssClass(class = 'pwdGREEN', selector = '#password_home')
+    }
+  })
+  
+  
   #eventReactive(input$refresh, {
   #  shinyjs::js$refresh()
-    #hideElement("gaugeMasque_progress")
-    #reset("gaugeMasque_progress")
-    #showElement("gaugeMasque_progress")
-    #shinyjs::reset("gaugeMasque_progress")
-    #shinyjs::reset("reload-project")
-    #showElement("reload-project")
+  #hideElement("gaugeMasque_progress")
+  #reset("gaugeMasque_progress")
+  #showElement("gaugeMasque_progress")
+  #shinyjs::reset("gaugeMasque_progress")
+  #shinyjs::reset("reload-project")
+  #showElement("reload-project")
   #})
   
   observeEvent(input$Check_project_over,{
@@ -1331,7 +1408,7 @@ shinyServer(function(input, output,session) {
     }
   })
   
-
+  
   
   
   
@@ -1443,7 +1520,7 @@ shinyServer(function(input, output,session) {
     input$refresh
     res = NULL
     resbox = Project_box_result(values$masque_key,values$curdir)
-
+    
     # if(resbox$PS$status=='done') showElement("MasqueToShaman",anim=TRUE)
     # if(resbox$PS$status!='done') hideElement("MasqueToShaman",anim=TRUE)
     return(resbox$box)
@@ -1514,7 +1591,7 @@ shinyServer(function(input, output,session) {
     res = NULL
     PS = Project_status(values$masque_key,values$curdir)
     if(PS$passOK){
-
+      
       if(PS$status=="doing"){
         json_file = PS$file
         progress_file = paste(values$curdir,"www","masque","doing",paste(basename(file_path_sans_ext(json_file)),"_progress",".txt",sep=""),sep= .Platform$file.sep)
@@ -1544,7 +1621,7 @@ shinyServer(function(input, output,session) {
     }
     return(bp)},
     options = list(lengthMenu = list(c(10, 50, -1), c('10', '50', 'All')),
-                      pageLength = 10,scrollX=TRUE, processing=FALSE,server=TRUE))
+                   pageLength = 10,scrollX=TRUE, processing=FALSE,server=TRUE))
   # ## plot gauge
   # output$gaugeMasque_progress <-renderGauge({
   # 
@@ -1562,7 +1639,7 @@ shinyServer(function(input, output,session) {
   textMASQUE <- reactive({
     
     samp = SamplesMasque(input,values)
-
+    
     text = paste("<b>Type of data:</b>",input$DataTypeMasque,"<br /> <br /> ",
                  "<b>Paired-end sequencing:</b>",input$PairedOrNot)
     text = paste(text,"<br /> <br /> ","<b>Number of samples:</b>",length(samp$samples))
@@ -1584,15 +1661,15 @@ shinyServer(function(input, output,session) {
     text = textMASQUE()
     
     res = div(id="boxsum",style = "word-wrap: break-word;",box(id="boxsum",
-            title = strong("Summary of your analysis"), width = NULL, background = "light-blue",
-            # HTML("<h4><b>Enter the key:</b></h4>",'<hr color="white"> <br /> <br /> '),
-
-            HTML(text),
-            div(style = "text-align:right;",
-                downloadButton("printMasque_summary", "Save"),
-                tags$style(type='text/css', "#printMasque_summary {margin-top: 15px;}")
-            )
-          )
+                                                               title = strong("Summary of your analysis"), width = NULL, background = "light-blue",
+                                                               # HTML("<h4><b>Enter the key:</b></h4>",'<hr color="white"> <br /> <br /> '),
+                                                               
+                                                               HTML(text),
+                                                               div(style = "text-align:right;",
+                                                                   downloadButton("printMasque_summary", "Save"),
+                                                                   tags$style(type='text/css', "#printMasque_summary {margin-top: 15px;}")
+                                                               )
+    )
     )
     return(res)
   })
@@ -1617,7 +1694,7 @@ shinyServer(function(input, output,session) {
     to <- isolate(input$to)
     subject <- "SHAMAN Analysis"
     body <- paste("Hello, \n You are using SHAMAN to run a quantitative metagenomic analysis. Hereafter is the key you need in SHAMAN :
-    \n",values$pass," \n \n Best regards, \n SHAMAN team")
+                  \n",values$pass," \n \n Best regards, \n SHAMAN team")
     mailControl=list(smtpServer="smtp.pasteur.fr")
     from="<shaman@pasteur.fr>"
     ## Send mail
@@ -1631,7 +1708,7 @@ shinyServer(function(input, output,session) {
     ## Store the email 
     values$login_email = to
   })
-
+  
   
   ## Create button once MASQUE computation is over
   # output$MasqueToShaman_button <- renderUI({
@@ -1658,16 +1735,16 @@ shinyServer(function(input, output,session) {
   #                                 )
   #     } else removePopover(session, "load-masque-res")
   # })
-
+  
   
   #observeEvent(input$RunResMasque,{
   #  sendSweetAlert(messageId="WTF2", title = "Success", text = "EUHHH", type = "success", html=TRUE)
-    #updateSelectInput(session, "FileFormat","",selected = "fileBiom")
-    #reset("fileBiom"); reset("fileTree"); print("WTG");
-    #reset("fileBiom")
-    #reset("fileTree")
-    #values$biom_masque = paste(values$curdir,"www","masque","done",paste("file",values$masque_key,sep=""),paste("shaman_",input$masque_database,".biom",sep=""),sep= .Platform$file.sep)
-    #values$tree_masque = paste(values$curdir,"www","masque","done",paste("file",values$masque_key,sep=""),paste("shaman_",input$masque_database,"_tree.nhx",sep=""),sep= .Platform$file.sep)
+  #updateSelectInput(session, "FileFormat","",selected = "fileBiom")
+  #reset("fileBiom"); reset("fileTree"); print("WTG");
+  #reset("fileBiom")
+  #reset("fileTree")
+  #values$biom_masque = paste(values$curdir,"www","masque","done",paste("file",values$masque_key,sep=""),paste("shaman_",input$masque_database,".biom",sep=""),sep= .Platform$file.sep)
+  #values$tree_masque = paste(values$curdir,"www","masque","done",paste("file",values$masque_key,sep=""),paste("shaman_",input$masque_database,"_tree.nhx",sep=""),sep= .Platform$file.sep)
   #})
   
   observeEvent(input$LoadResMasque, {
@@ -1692,6 +1769,29 @@ shinyServer(function(input, output,session) {
   })
   
   
+  
+  #from home
+  observeEvent(input$LoadResMasque_home, {
+    
+    if (input$masque_db_home == "rdp"){
+      updateSelectInput(session, "FileFormat","",selected = "fileCounts")
+      updateSelectInput(session, "TypeTaxo","",selected = "RDP")
+      reset("fileTaxo")
+      reset("fileCounts")
+      values$rdp_thres_masque = as.numeric(input$rdp_thres_home)
+      values$rdp_annot_masque = paste(values$curdir,"www","masque","done",paste("file",values$masque_key,sep=""),"shaman_rdp_annotation.tsv",sep= .Platform$file.sep)
+      values$count_table_masque = paste(values$curdir,"www","masque","done",paste("file",values$masque_key,sep=""),"shaman_otu_table.tsv",sep= .Platform$file.sep)
+    }
+    else{
+      updateSelectInput(session, "FileFormat","",selected = "fileBiom")
+      reset("fileBiom")
+      reset("fileTree")
+      values$biom_masque = paste(values$curdir,"www","masque","done",paste("file",values$masque_key,sep=""),paste("shaman_",input$masque_db_home,".biom",sep=""),sep= .Platform$file.sep)
+      values$tree_masque = paste(values$curdir,"www","masque","done",paste("file",values$masque_key,sep=""),paste("shaman_",input$masque_db_home,"_tree.nhx",sep=""),sep= .Platform$file.sep)
+    }
+    sendSweetAlert(messageId="LoadResMasque_home", title = "Success", text = "Processed data were successfully loaded. You can go to statistical analysis part to analyze your data with SHAMAN.", type = "success", html=TRUE)
+  })
+  
   ## Export results in .zip 
   output$Download_masque_zip <- downloadHandler(
     filename = function() { paste("SHAMAN_",values$masque_key,'.zip',sep="")},
@@ -1700,12 +1800,75 @@ shinyServer(function(input, output,session) {
       if(file.exists(zip_file)){file.copy(zip_file, file)}
     }
   )
-
   
+  ## Export results in .zip from home
+  output$Download_masque_zip_home <- downloadHandler(
+    filename = function() { paste("SHAMAN_",values$masque_key,'.zip',sep="")},
+    content = function(file){
+      zip_file = paste(values$curdir,"www","masque","done",paste("shaman_",values$masque_key,".zip",sep=""),sep= .Platform$file.sep)
+      if(file.exists(zip_file)){file.copy(zip_file, file)}
+    }
+  )
+  
+  
+  
+  output$Project_box_home <- renderUI({
+    
+    res = NULL
+    PS = Project_status(values$masque_key,values$curdir)
+    
+    if(PS$passOK){
+      
+      if(PS$status=="done")
+      {
+        res = list()
+        json_file = PS$file
+        folder_name = paste('file',values$masque_key,sep="")
+        json_file = paste(curdir,"www","masque","done",paste(folder_name, ".json", sep=""),sep= .Platform$file.sep)
+        json_data = rjson::fromJSON(file=json_file)
+        
+        ### Paste file name as folder
+        annot_process = paste(curdir,"www","masque","done",folder_name,"shaman_process_annotation.tsv",sep= .Platform$file.sep)
+        
+        ## Waiting for file creation (max 3min)
+        start = Sys.time(); diff = 0
+        while(!file.exists(annot_process) && diff<180){
+          annot_process = paste(curdir,"www","masque","done",folder_name,"shaman_process_annotation.tsv",sep= .Platform$file.sep)
+          tmp = Sys.time()
+          diff = tmp-start
+        }
+        
+        if(file.exists(annot_process))
+        {
+          
+          ap = read.csv(annot_process,sep="\t")
+          if(json_data$type == "16S") db_choices = c("Silva" = "silva","Greengenes" = "greengenes", "RDP"= "rdp")
+          else if(json_data$type == "23S_28S" || json_data$type == "18S") db_choices = c("Silva" = "silva","RDP"= "rdp")
+          else db_choices = c("Findley" = "findley", "Underhill"= "underhill", "Unite"= "unite", "RDP"= "rdp")
+          
+          res[[1]] = fluidRow(
+            box(title="Load the results",width = 3, background = "light-blue",
+                selectInput("masque_db_home","Select the database",choices=db_choices),
+                conditionalPanel(condition="input.masque_db_home=='rdp'",numericInput("rdp_thres_home",h6(strong("Threshold:")),0.5,step=0.01,min=0.01,max=1)),
+                actionButton("LoadResMasque_home", "Upload the results",icon=icon('upload')),
+                tags$style(type='text/css', "#LoadResMasque_home { width:100%; }"),
+                receiveSweetAlert(messageId = "LoadResMasque_home")
+            ),
+            box(title="Download .zip file",width = 3, status = "success",
+                downloadButton('Download_masque_zip_home', 'Download the results'),
+                tags$style(type='text/css', "#Download_masque_zip_home { width:100%;}")
+            )
+          )
+        }
+      }
+    }
+    
+    return(res)
+  })
   
   ######################## END MASQUE #################################
   
-
+  
   
   
   observeEvent(input$deleteRows,{
@@ -1750,8 +1913,8 @@ shinyServer(function(input, output,session) {
     
     return(res)
   })
-
-
+  
+  
   ## Var for normalization
   output$SelectVarNorm <- renderUI({
     
@@ -1826,7 +1989,7 @@ shinyServer(function(input, output,session) {
     input$DataTarget_rows_selected
   })
   
-   
+  
   
   ## Counts table for the selected taxonomy level
   output$CountsMerge <- DT::renderDataTable(
@@ -1961,7 +2124,7 @@ shinyServer(function(input, output,session) {
     AddCont()
     
   },priority=1)
-
+  
   
   ## Add contrast function
   AddContEasy <-eventReactive(input$AddContrastEasy,{
@@ -2008,7 +2171,7 @@ shinyServer(function(input, output,session) {
         filesize = file.info(namesfile)[,"size"]
         if(is.na(filesize)){filesize=0}
         if(filesize!=0){ createdCont = read.table(namesfile,header=TRUE) }
-      
+        
         if(!is.null(createdCont)) res = cbind(res,createdCont)
         updateSelectInput(session, "ContrastList","Contrasts",colnames(res))
         updateSelectInput(session, "ContrastList_table","Contrasts",colnames(res))
@@ -2093,7 +2256,7 @@ shinyServer(function(input, output,session) {
       res = infoBox("Contrasts", subtitle = h6("At least one contrast (non null) must be defined"), icon = icon("warning"),color = "light-blue",width=NULL,fill=TRUE)
       
       filesize = isolate(file.info(namesfile)[,"size"])
-
+      
       if(is.na(filesize)){filesize=0}
       if(filesize!=0) tmpFile = read.table(namesfile,header=TRUE)
       if(!is.null(tmpFile))
@@ -2102,15 +2265,15 @@ shinyServer(function(input, output,session) {
         if(!is.null(CheckCont$Warning)) res = infoBox(h6(strong("Contrasts")), subtitle = h6(CheckCont$Warning), icon = icon("warning"),color = "orange",width=NULL,fill=TRUE)
         if(!is.null(CheckCont$Error)) res = infoBox(h6(strong("Contrasts")), subtitle = h6(CheckCont$Error), icon = icon("thumbs-o-down"),color = "red",width=NULL,fill=TRUE)
         if(is.null(CheckCont$Error) && is.null(CheckCont$Warning))  res = infoBox("Contrasts", subtitle = h6("Contrasts OK"), icon = icon("thumbs-o-up"),color = "green",width=NULL,fill=TRUE)
-      
+        
       }
       ## if user load a bad contrast file after having define one or more good contrasts
-#       if(!is.null(input$fileContrast)){
-#         tmpRead = ReadContrastFile()
-#         CheckCont_new = CheckContrast(tmpRead,dds)
-#         if(!is.null(CheckCont_new$Warning)) info("test1")
-#         if(!is.null(CheckCont_new$Error)) info("test2")
-#       }
+      #       if(!is.null(input$fileContrast)){
+      #         tmpRead = ReadContrastFile()
+      #         CheckCont_new = CheckContrast(tmpRead,dds)
+      #         if(!is.null(CheckCont_new$Warning)) info("test1")
+      #         if(!is.null(CheckCont_new$Error)) info("test2")
+      #       }
     }
     return(res)
   })
@@ -2122,7 +2285,7 @@ shinyServer(function(input, output,session) {
     dds = resDiff$dds
     
     if(!is.null(resDiff)){
-
+      
       if(!is.null(input$fileContrast)){
         tmpRead = ReadContrastFile()
         CheckCont_new = CheckContrast(tmpRead,dds)
@@ -2147,7 +2310,7 @@ shinyServer(function(input, output,session) {
     if(!is.null(resDiff))
     { 
       ## Check the R version
-       if(as.numeric(R.Version()$major)<=3 && as.numeric(R.Version()$minor) <=1.2){
+      if(as.numeric(R.Version()$major)<=3 && as.numeric(R.Version()$minor) <=1.2){
         box(title="Contrasts (New)",width = NULL, status = "primary", solidHeader = TRUE,collapsible = TRUE,collapsed = FALSE,
             fluidRow(
               column(width=3,selectInput("Select1_contrast","Compare","")),
@@ -2215,37 +2378,37 @@ shinyServer(function(input, output,session) {
   
   
   ModifMod_ContEasyFor <-eventReactive(input$Select1_contrast,
-    {
-    
-    resDiff = ResDiffAnal()
-    int = input$Interaction2
-    ModInterestFor = "All"
-    target = as.data.frame(resDiff$target)
-    
-    InterVar = input$InterestVar
-    
-    ## Get the selected variable from the selected modality
-    Sel_Var = InterVar[which(unlist(lapply(as.data.frame(target[,InterVar]),FUN = function(x){input$Select1_contrast%in%x})))]
-   
-    
-    ## Keep only the variables in interactoin with Sel_Var
-    if(!is.null(Sel_Var) && length(int)>0 && length(Sel_Var)>0){
-      indInter = grep(Sel_Var,int)
-      if(length(indInter)>0) int = int[indInter]
-      var_Inter = unique(unlist(strsplit(int,":"))) 
-      var_Inter = var_Inter[-which(var_Inter%in%Sel_Var)]
-      
-      ## remove if numeric
-      if(length(var_Inter)>1){ind = unlist(lapply(as.data.frame(target[,var_Inter]),is.numeric));var_Inter = var_Inter[!ind]}
-      if(length(var_Inter)==1){ind = is.numeric(target[,var_Inter]);var_Inter = var_Inter[!ind]}
-      
-
-      if(length(var_Inter)>=1)  ModInterestFor = c("All",unique(unlist(lapply(as.data.frame(target[,var_Inter]),levels))))
-
-    }
-    
-    updateSelectInput(session,"Select3_contrast","For",ModInterestFor)
-  })
+                                       {
+                                         
+                                         resDiff = ResDiffAnal()
+                                         int = input$Interaction2
+                                         ModInterestFor = "All"
+                                         target = as.data.frame(resDiff$target)
+                                         
+                                         InterVar = input$InterestVar
+                                         
+                                         ## Get the selected variable from the selected modality
+                                         Sel_Var = InterVar[which(unlist(lapply(as.data.frame(target[,InterVar]),FUN = function(x){input$Select1_contrast%in%x})))]
+                                         
+                                         
+                                         ## Keep only the variables in interactoin with Sel_Var
+                                         if(!is.null(Sel_Var) && length(int)>0 && length(Sel_Var)>0){
+                                           indInter = grep(Sel_Var,int)
+                                           if(length(indInter)>0) int = int[indInter]
+                                           var_Inter = unique(unlist(strsplit(int,":"))) 
+                                           var_Inter = var_Inter[-which(var_Inter%in%Sel_Var)]
+                                           
+                                           ## remove if numeric
+                                           if(length(var_Inter)>1){ind = unlist(lapply(as.data.frame(target[,var_Inter]),is.numeric));var_Inter = var_Inter[!ind]}
+                                           if(length(var_Inter)==1){ind = is.numeric(target[,var_Inter]);var_Inter = var_Inter[!ind]}
+                                           
+                                           
+                                           if(length(var_Inter)>=1)  ModInterestFor = c("All",unique(unlist(lapply(as.data.frame(target[,var_Inter]),levels))))
+                                           
+                                         }
+                                         
+                                         updateSelectInput(session,"Select3_contrast","For",ModInterestFor)
+                                       })
   
   
   observeEvent(input$Select1_contrast,{ 
@@ -2374,7 +2537,7 @@ shinyServer(function(input, output,session) {
   observeEvent(input$RunDESeq,{
     create_forked_task(ResDiffAnal())
   })
-    
+  
   
   #####################################################
   ##
@@ -2418,23 +2581,23 @@ shinyServer(function(input, output,session) {
   
   
   # Infobox model/target
-#   output$InfoModel<- renderInfoBox({
-#     res = infoBox(h6(strong("Target file and variables")), 
-#                   subtitle = h6(strong("Your target file must contain at least 2 columns and 2 rows. NA's values are not allowed and the variables must not be collinear.")), 
-#                   icon = icon("book"),color = "green",width=NULL,fill=TRUE)
-#     
-#     target = values$TargetWorking
-#     taxo = input$TaxoSelect
-#     ChTM = NULL
-#     
-#     ## Return NULL if there is no error
-#     if(!is.null(target)) ChTM = CheckTargetModel(input,target)
-#   
-#     if(!is.null(ChTM)) res = infoBox(h6(strong("Error")), subtitle = h6(ChTM), icon = icon("thumbs-o-down"),color = "red",width=NULL,fill=TRUE)
-#     
-#     return(res)
-#     
-#     })
+  #   output$InfoModel<- renderInfoBox({
+  #     res = infoBox(h6(strong("Target file and variables")), 
+  #                   subtitle = h6(strong("Your target file must contain at least 2 columns and 2 rows. NA's values are not allowed and the variables must not be collinear.")), 
+  #                   icon = icon("book"),color = "green",width=NULL,fill=TRUE)
+  #     
+  #     target = values$TargetWorking
+  #     taxo = input$TaxoSelect
+  #     ChTM = NULL
+  #     
+  #     ## Return NULL if there is no error
+  #     if(!is.null(target)) ChTM = CheckTargetModel(input,target)
+  #   
+  #     if(!is.null(ChTM)) res = infoBox(h6(strong("Error")), subtitle = h6(ChTM), icon = icon("thumbs-o-down"),color = "red",width=NULL,fill=TRUE)
+  #     
+  #     return(res)
+  #     
+  #     })
   
   output$InfoModel<- renderUI({
     
@@ -2443,7 +2606,7 @@ shinyServer(function(input, output,session) {
     labeled = values$labeled
     taxo = input$TaxoSelect
     ChTM = NULL
-    
+
     ## Return NULL if there is no error
     if(!is.null(target)) ChTM = CheckTargetModel(input,target,labeled,CT)
     if(!is.null(ChTM$Error)) {   
@@ -2525,7 +2688,7 @@ shinyServer(function(input, output,session) {
   })
   
   
-
+  
   
   
   
@@ -2633,7 +2796,7 @@ shinyServer(function(input, output,session) {
   
   
   output$ResPermaTestBox <- renderUI({
-
+    
     resDiff = ResDiffAnal()
     ## Phylogenetic tree
     tree = dataInputTree()$data
@@ -2651,7 +2814,7 @@ shinyServer(function(input, output,session) {
       res$ccl = paste("<center><b><font size='+1'>p-value :",round(resTest,5),"</font></b></center><br/>")
       
       resBox = box(title="Permanova ",width = 6, status = "primary", solidHeader = TRUE,collapsible = TRUE,collapsed = FALSE,
-          HTML(unlist(res))
+                   HTML(unlist(res))
       )
     } 
     return(resBox)
@@ -2668,15 +2831,15 @@ shinyServer(function(input, output,session) {
     
     
     res = selectInput("DistClust","Distance", unique(sort(c("altGower", "binomial", "bray", "canberra", "cao", "chao", "euclidean","gower", "horn",
-                                                "jaccard", "kulczynski",  "mahalanobis", "morisita", "mountford","raup",
-                                                "SERE"="sere", dist_phyl))),selected="bray")
+                                                            "jaccard", "kulczynski",  "mahalanobis", "morisita", "mountford","raup",
+                                                            "SERE"="sere", dist_phyl))),selected="bray")
     
     ## Add the unifrac distance
     if(!is.null(tree) && !is.null(input$fileTree) && is.null(ErrorTree)  && TaxoSelect %in% c("OTU/Gene", "MGS"))
     {
       res = selectInput("DistClust","Distance",unique(sort(c("altGower", "binomial", "bray", "canberra", "cao", "chao", "euclidean","gower", "horn",
-                                                 "jaccard","kulczynski",  "mahalanobis", "morisita", "mountford", "raup",
-                                                 "SERE"="sere","Unifrac", dist_phyl))),selected="bray")
+                                                             "jaccard","kulczynski",  "mahalanobis", "morisita", "mountford", "raup",
+                                                             "SERE"="sere","Unifrac", dist_phyl))),selected="bray")
     }
     
     return(res)
@@ -2746,7 +2909,7 @@ shinyServer(function(input, output,session) {
       else if(input$Exp_format=="svg") svg(file, width = input$widthDiagExport/96, height = input$heightDiagExport/96)
       resDiff = ResDiffAnal()
       tree = isolate(dataInputTree()$data)
-
+      
       
       print(Plot_diag(input,resDiff,tree))
       dev.off()
@@ -2938,7 +3101,7 @@ shinyServer(function(input, output,session) {
       extension='SHAMAN.csv'
       if(input$sepexpdiff == "\t") extension='SHAMAN.tsv' 
       paste(input$WhichExportTable,input$ContrastList_table,extension,sep="_")
-      },
+    },
     
     content = function(file){
       switch(input$WhichExportTable,
@@ -2982,7 +3145,7 @@ shinyServer(function(input, output,session) {
     
     ## Return NULL if there is no error
     if(!is.null(target) && length(VarInt)>=1) ChTM = CheckTargetModel(input,target,labeled,CT)$Error
-
+    
     if(!is.null(target) && taxo!="..." && is.null(ChTM) && length(VarInt)>=1) res = actionButton("RunDESeq",strong("Run analysis"),icon = icon("caret-right"))
     
     return(res)
@@ -2998,23 +3161,21 @@ shinyServer(function(input, output,session) {
   
   
   output$PhyloTreeMetaR2 <- renderPhyloTreeMetaR({
-     resDiff = ResDiffAnal()
-     taxo_table = dataInput()$data$taxo
-     treeseq = dataInputTree()$treeseq
-     
-     
-     if(!is.null(resDiff$dds) && length(input$VisuVarInt)>=1 ) 
-       if(input$NormOrRaw=="norm") withProgress(message="Loading...", Plot_Visu_Phylotree(input, resDiff, dataMergeCounts()$CT_Norm, taxo_table, treeseq))
-       else withProgress(message="Loading...", Plot_Visu_Phylotree(input, resDiff, dataMergeCounts()$CT_noNorm, taxo_table, treeseq))
-       
-       
+    resDiff = ResDiffAnal()
+    taxo_table = dataInput()$data$taxo
+    treeseq = dataInputTree()$treeseq
+    
+    
+    if(!is.null(resDiff$dds) && length(input$VisuVarInt)>=1 ) 
+      if(input$NormOrRaw=="norm") withProgress(message="Loading...", Plot_Visu_Phylotree(input, resDiff, dataMergeCounts()$CT_Norm, taxo_table, treeseq))
+    else withProgress(message="Loading...", Plot_Visu_Phylotree(input, resDiff, dataMergeCounts()$CT_noNorm, taxo_table, treeseq))
   })
   
   
   output$PlotVisuTree <- renderTreeWeightD3({
     resDiff = ResDiffAnal()
     taxo_table = dataInput()$data$taxo
-
+    
     
     res = NULL
     if(!is.null(resDiff$dds) && length(input$VisuVarInt)>=1){
@@ -3022,7 +3183,7 @@ shinyServer(function(input, output,session) {
       else res = Plot_Visu_Tree(input,resDiff,dataMergeCounts()$CT_noNorm,taxo_table)
     } 
     return(res)
-
+    
   })
   
   KronaR =function(){
@@ -3042,7 +3203,7 @@ shinyServer(function(input, output,session) {
     
     return(temp)
   }
-
+  
   output$PlotVisuBar <- renderChart({
     resDiff = ResDiffAnal()
     res = NULL
@@ -3158,13 +3319,13 @@ shinyServer(function(input, output,session) {
   
   output$Diversitytable <- DT::renderDataTable(
     datatable({
-    resDiff = ResDiffAnal()
-    tmp = Plot_Visu_Diversity(input,resDiff)$dataDiv
-    tmp$VarX=NULL; tmp$VarCol=NULL
-    tmp[,c(4,5,1,2,3)]},rownames= FALSE),
-  options = list(lengthMenu = list(c(10, 50, -1), c('10', '50', 'All')),
-                 pageLength = 10,scrollX=TRUE, processing=FALSE
-  ))
+      resDiff = ResDiffAnal()
+      tmp = Plot_Visu_Diversity(input,resDiff)$dataDiv
+      tmp$VarX=NULL; tmp$VarCol=NULL
+      tmp[,c(4,5,1,2,3)]},rownames= FALSE),
+    options = list(lengthMenu = list(c(10, 50, -1), c('10', '50', 'All')),
+                   pageLength = 10,scrollX=TRUE, processing=FALSE
+    ))
   
   ## Export Diversitytable in .csv
   output$ExportDiversitytable <- downloadHandler(
@@ -3460,7 +3621,7 @@ shinyServer(function(input, output,session) {
     resDiff = ResDiffAnal()
     res = list()
     namesTarget = colnames(target)[2:ncol(target)]
-
+    
     if(!is.null(data$counts) && !is.null(data$taxo) && nrow(data$counts)>0 && nrow(data$taxo)>0 && !is.null(taxo) && taxo!="..." && !is.null(target)) 
     {
       counts = dataMergeCounts()$counts
@@ -3479,7 +3640,7 @@ shinyServer(function(input, output,session) {
         if(any(numInd)) Available_x = c(Available_x,namesTarget[numInd])
       }
       Available_y = Available_x
-    
+      
       res[[1]] = selectizeInput("Xscatter",h6(strong("X variable")),Available_x, selected = Available_x[1],multiple = FALSE)
       res[[2]] = selectizeInput("Yscatter",h6(strong("Y variable")),Available_y, selected = Available_x[2],multiple = FALSE)
       res[[3]] = selectizeInput("ColorBy",h6(strong("Color variable")),c("None"="None",namesTarget[!numInd]),multiple = FALSE)
@@ -3513,7 +3674,7 @@ shinyServer(function(input, output,session) {
   #   return(res)
   # 
   # })
-
+  
   #####################################################
   ##
   ##                KRONA
@@ -3526,15 +3687,15 @@ shinyServer(function(input, output,session) {
   #  {
   #    print(counts)
   #    print(data)
-      #KronaR(dat) 
-      #print(data$counts)
-      #krona_table=tempfile(pattern = "krona", tmpdir = tempdir(), fileext = "")
-      #url=paste(krona_table, ".html", sep="")
-      #system(paste("export PERL5LIB=/home/aghozlan/workspace/SHAMAN_App/KronaTools-2.6/lib:$PERL5LIB; /home/aghozlan/workspace/META10S_App/krona_bin/bin/ktImportText", krona_table))
-      #system(paste("ktImportText", krona_table))
-      #refs <- paste0("<a href='",  url, "' target='_blank'>krona</a>")
-      
-      #data.frame(refs)
+  #KronaR(dat) 
+  #print(data$counts)
+  #krona_table=tempfile(pattern = "krona", tmpdir = tempdir(), fileext = "")
+  #url=paste(krona_table, ".html", sep="")
+  #system(paste("export PERL5LIB=/home/aghozlan/workspace/SHAMAN_App/KronaTools-2.6/lib:$PERL5LIB; /home/aghozlan/workspace/META10S_App/krona_bin/bin/ktImportText", krona_table))
+  #system(paste("ktImportText", krona_table))
+  #refs <- paste0("<a href='",  url, "' target='_blank'>krona</a>")
+  
+  #data.frame(refs)
   #  }
   #}, sanitize.text.function = function(x) x)
   
@@ -3562,7 +3723,7 @@ shinyServer(function(input, output,session) {
       ind.filter =Filtered_feature(counts,input$SliderThSamp,input$SliderThAb)$ind
       counts = counts[-ind.filter,]
     }
-
+    
     
     if (!is.null(counts)){
       if (nrow(counts)>=2){
@@ -3575,7 +3736,7 @@ shinyServer(function(input, output,session) {
     if (is.null(counts) ) {
       shinyjs::disable("RunDESeq")
     }
-
+    
   })
   
   
@@ -3592,7 +3753,7 @@ shinyServer(function(input, output,session) {
   })
   
   
-
+  
   
 })
 

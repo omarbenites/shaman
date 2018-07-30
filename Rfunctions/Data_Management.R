@@ -175,7 +175,6 @@ CheckTargetModel <- function(input,target,labeled,CT)
   Error = NULL
   HowTo = NULL
   InterVar = input$InterestVar
-  
   labels = rownames(target)
   ind = which(colnames(CT)%in%labels)
 #   InterVar%in%
@@ -415,7 +414,29 @@ CreateJSON <- function(input,values){
                     "host"=input$HostName,
                     "type"=input$DataTypeMasque,
                     "mail"=values$login_email,
-                    "contaminant"= path_fasta
+                    "contaminant"= path_fasta,
+                    "phredthres" = input$phredthres,
+                    "mincorrect" = input$mincorrect,
+                    "minreadlength" = input$minreadlength,
+                    "dreptype" = input$dreptype,
+                    "maxampliconlength" = input$maxampliconlength,
+                    "minampliconlength" = input$minampliconlength,
+                    "minabundance" = input$minabundance,
+                    "clusteringthreshold" = input$clusteringthreshold,
+                    "clusteringstrand" = input$clusteringstrand,
+                    "annotationstrand" = input$annotationstrand,
+                    "aKmin" = input$annotationKingdomthreshold,
+                    "aPmin" = input$annotationPhylumthreshold[1],
+                    "aPmax" = input$annotationPhylumthreshold[2],
+                    "aCmin" = input$annotationClassthreshold[1],
+                    "aCmax" = input$annotationClassthreshold[2],
+                    "aOmin" = input$annotationOrderthreshold[1],
+                    "aOmax" = input$annotationOrderthreshold[2],
+                    "aFmin" = input$annotationFamilythreshold[1],
+                    "aFmax" = input$annotationFamilythreshold[2],
+                    "aGmin" = input$annotationGenusthreshold[1],
+                    "aGmax" = input$annotationGenusthreshold[2],
+                    "aSmin" = input$annotationSpeciethreshold
                     )
 
     df %>% jsonlite::toJSON() %>% write_lines(values$json_name)
@@ -432,7 +453,30 @@ CreateJSON <- function(input,values){
                     "type"=input$DataTypeMasque,
                     "mail"=values$login_email,
                     "contaminant"= path_fasta,
-                    "pattern_R1"= input$R1files
+                    "pattern_R1"= input$R1files,
+                    "phredthres" = input$phredthres,
+                    "mincorrect" = input$mincorrect,
+                    "minoverlap" = input$minoverlap,
+                    "minreadlength" = input$minreadlength,
+                    "dreptype" = input$dreptype,
+                    "maxampliconlength" = input$maxampliconlength,
+                    "minampliconlength" = input$minampliconlength,
+                    "minabundance" = input$minabundance,
+                    "clusteringthreshold" = input$clusteringthreshold,
+                    "clusteringstrand" = input$clusteringstrand,
+                    "annotationstrand" = input$annotationstrand,
+                    "aKmin" = input$annotationKingdomthreshold,
+                    "aPmin" = input$annotationPhylumthreshold[1],
+                    "aPmax" = input$annotationPhylumthreshold[2],
+                    "aCmin" = input$annotationClassthreshold[1],
+                    "aCmax" = input$annotationClassthreshold[2],
+                    "aOmin" = input$annotationOrderthreshold[1],
+                    "aOmax" = input$annotationOrderthreshold[2],
+                    "aFmin" = input$annotationFamilythreshold[1],
+                    "aFmax" = input$annotationFamilythreshold[2],
+                    "aGmin" = input$annotationGenusthreshold[1],
+                    "aGmax" = input$annotationGenusthreshold[2],
+                    "aSmin" = input$annotationSpeciethreshold
                     )
     df %>% jsonlite::toJSON() %>% write_lines(values$json_name)
   }
@@ -529,6 +573,7 @@ GetCountsMerge <- function(input,dataInput,taxoSelect,target,design)
   normFactors = NULL
   FeatureSize = NULL
   CT_Norm = NULL
+  Error = NULL
   
   ## Counts and taxo tables
   CT = dataInput$counts
@@ -562,12 +607,10 @@ GetCountsMerge <- function(input,dataInput,taxoSelect,target,design)
       CT=CT_int
     } else CT = CT[,ind]
     
-    
     ## Order CT according to the target
     CT = OrderCounts(counts=CT,labels=labels)$CountsOrder
     CT_noNorm = CT
     RowProd = sum(apply(CT_noNorm,1,prod))
-    
     merged_table = merge(CT, taxo, by="row.names")
     CT = as.data.frame(merged_table[,2: (dim(CT)[2]+1)])
     taxo = as.data.frame(merged_table[,(dim(CT)[2]+2):dim(merged_table)[2]])
@@ -577,96 +620,97 @@ GetCountsMerge <- function(input,dataInput,taxoSelect,target,design)
     colnames(taxo) = namesTaxo
     #ordOTU = order(rownames(taxo))
     counts_annot = CT
-    
-    ## Create the dds object
-    dds <- DESeqDataSetFromMatrix(countData=CT, colData=target, design=design,ignoreRank=TRUE)
-    
-    #save(dds,file="testdds.RData")
-    if(is.null(VarNorm)){
-      ## Counts normalisation
-      ## Normalisation with or without 0
-      if(input$AccountForNA=="NonNull" || RowProd==0) dds = estimateSizeFactors(dds,locfunc=eval(as.name(input$locfunc)),geoMeans=GeoMeansCT(CT))
-      if(input$AccountForNA=="All" && RowProd!=0) dds = estimateSizeFactors(dds,locfunc=eval(as.name(input$locfunc)))
-      if(input$AccountForNA=="Weighted" && input$AccountForNA!="NonNull" ) {dds = estimateSizeFactors(dds,locfunc=eval(as.name(input$locfunc)),geoMeans=GeoMeansCT(CT)); sizeFactors(dds) = w.sizefactor(CT)}
-      if(input$AccountForNA=="Total counts") { sizeFactors(dds) = colSums(CT)/mean(colSums(CT))}
-      normFactors = sizeFactors(dds)
-      
-    } else{
-      group = as.data.frame(target[,VarNorm])
-      group = apply(group,1,paste, collapse = "-")
-      normFactors = c()
-      mod = unique(group)
-      ## At least 2 samples are needed for the normalization
-      if(min(table(group))>1){
-        for(i in unique(group))
-        {
-          indgrp = which(group==i) 
-          CT_tmp = CT[,indgrp]
-          CT_tmp = removeNulCounts(CT_tmp) 
-          target_tmp = data.frame(labels = rownames(target)[indgrp])
-          dds_tmp <- DESeqDataSetFromMatrix(countData=CT_tmp, colData=target_tmp, design=~labels,ignoreRank=TRUE)
-          if(input$AccountForNA=="NonNull") {dds_tmp = estimateSizeFactors(dds_tmp,locfunc=eval(as.name(input$locfunc)),geoMeans=GeoMeansCT(CT_tmp)); normFactors[indgrp] = sizeFactors(dds_tmp)}
-          if(input$AccountForNA=="All") {dds_tmp = estimateSizeFactors(dds_tmp,locfunc=eval(as.name(input$locfunc))); normFactors[indgrp] = sizeFactors(dds_tmp)}
-          if(input$AccountForNA=="Weighted" && input$AccountForNA!="NonNull" ) {dds_tmp = estimateSizeFactors(dds_tmp,locfunc=eval(as.name(input$locfunc)),geoMeans=GeoMeansCT(CT_tmp)); normFactors[indgrp] = w.sizefactor(CT_tmp)}
-          if(input$AccountForNA=="Total counts") { normFactors[indgrp] = colSums(CT_tmp)/mean(colSums(CT_tmp))}
-        }
-      } else{
+    if(0%in%colSums(counts_annot)){Error = "At least one of the column of the counts table is 0" }
+    else{
+      ## Create the dds object
+      dds <- DESeqDataSetFromMatrix(countData=CT, colData=target, design=design,ignoreRank=TRUE)
+      #save(dds,file="testdds.RData")
+      if(is.null(VarNorm)){
+        ## Counts normalisation
+        ## Normalisation with or without 0
         if(input$AccountForNA=="NonNull" || RowProd==0) dds = estimateSizeFactors(dds,locfunc=eval(as.name(input$locfunc)),geoMeans=GeoMeansCT(CT))
         if(input$AccountForNA=="All" && RowProd!=0) dds = estimateSizeFactors(dds,locfunc=eval(as.name(input$locfunc)))
         if(input$AccountForNA=="Weighted" && input$AccountForNA!="NonNull" ) {dds = estimateSizeFactors(dds,locfunc=eval(as.name(input$locfunc)),geoMeans=GeoMeansCT(CT)); sizeFactors(dds) = w.sizefactor(CT)}
         if(input$AccountForNA=="Total counts") { sizeFactors(dds) = colSums(CT)/mean(colSums(CT))}
         normFactors = sizeFactors(dds)
+        
+      } else{
+        group = as.data.frame(target[,VarNorm])
+        group = apply(group,1,paste, collapse = "-")
+        normFactors = c()
+        mod = unique(group)
+        ## At least 2 samples are needed for the normalization
+        if(min(table(group))>1){
+          for(i in unique(group))
+          {
+            indgrp = which(group==i) 
+            CT_tmp = CT[,indgrp]
+            CT_tmp = removeNulCounts(CT_tmp) 
+            target_tmp = data.frame(labels = rownames(target)[indgrp])
+            dds_tmp <- DESeqDataSetFromMatrix(countData=CT_tmp, colData=target_tmp, design=~labels,ignoreRank=TRUE)
+            if(input$AccountForNA=="NonNull") {dds_tmp = estimateSizeFactors(dds_tmp,locfunc=eval(as.name(input$locfunc)),geoMeans=GeoMeansCT(CT_tmp)); normFactors[indgrp] = sizeFactors(dds_tmp)}
+            if(input$AccountForNA=="All") {dds_tmp = estimateSizeFactors(dds_tmp,locfunc=eval(as.name(input$locfunc))); normFactors[indgrp] = sizeFactors(dds_tmp)}
+            if(input$AccountForNA=="Weighted" && input$AccountForNA!="NonNull" ) {dds_tmp = estimateSizeFactors(dds_tmp,locfunc=eval(as.name(input$locfunc)),geoMeans=GeoMeansCT(CT_tmp)); normFactors[indgrp] = w.sizefactor(CT_tmp)}
+            if(input$AccountForNA=="Total counts") { normFactors[indgrp] = colSums(CT_tmp)/mean(colSums(CT_tmp))}
+          }
+        } else{
+          if(input$AccountForNA=="NonNull" || RowProd==0) dds = estimateSizeFactors(dds,locfunc=eval(as.name(input$locfunc)),geoMeans=GeoMeansCT(CT))
+          if(input$AccountForNA=="All" && RowProd!=0) dds = estimateSizeFactors(dds,locfunc=eval(as.name(input$locfunc)))
+          if(input$AccountForNA=="Weighted" && input$AccountForNA!="NonNull" ) {dds = estimateSizeFactors(dds,locfunc=eval(as.name(input$locfunc)),geoMeans=GeoMeansCT(CT)); sizeFactors(dds) = w.sizefactor(CT)}
+          if(input$AccountForNA=="Total counts") { sizeFactors(dds) = colSums(CT)/mean(colSums(CT))}
+          normFactors = sizeFactors(dds)
+        }
+        
+        sizeFactors(dds) = normFactors
       }
       
-      sizeFactors(dds) = normFactors
-    }
-    
-    ## Keep normalized OTU table
-    CT_Norm = counts(dds, normalized=TRUE)
-    
-    # Only interesting OTU
-    # merged_table = merge(CT, taxo[order(rownames(CT)),], by="row.names")
-    
-    #     merged_table = merge(CT, taxo, by="row.names")
-    #     CT = as.data.frame(merged_table[,2: (dim(CT)[2]+1)])
-    #     taxo = as.data.frame(merged_table[,(dim(CT)[2]+2):dim(merged_table)[2]])
-    #     
-    #     rownames(CT) = merged_table[,1]
-    #     rownames(taxo) = merged_table[,1]
-    #     #ordOTU = order(rownames(taxo))
-    #     counts_annot = CT
-    #       ordOTU = order(rownames(taxo))
-    #       indOTU_annot = which(rownames(CT)%in%rownames(taxo))
-    #       counts_annot = CT[indOTU_annot[ordOTU],]
-    ## Aggregate matrix
-    if(taxoSelect=="OTU/Gene") counts = counts_annot
-    else{
-      if(input$TypeTable == "MGS" && input$FileFormat!="fileBiom"){
-        MGS_taxocol = which(toupper(colnames(taxo))%in%"MGS")
-        taxoS = taxo[,MGS_taxocol]
-        counts = aggregate(counts_annot,by=list(Taxonomy = taxoS),mean)
-        rownames(counts)=counts[,1]
-        counts=counts[,-1]
-        counts_int=t(apply(counts,1,as.integer))
-        rownames(counts_int)=rownames(counts)
-        colnames(counts_int)=colnames(counts)
-        counts=counts_int
+      ## Keep normalized OTU table
+      CT_Norm = counts(dds, normalized=TRUE)
+      
+      # Only interesting OTU
+      # merged_table = merge(CT, taxo[order(rownames(CT)),], by="row.names")
+      
+      #     merged_table = merge(CT, taxo, by="row.names")
+      #     CT = as.data.frame(merged_table[,2: (dim(CT)[2]+1)])
+      #     taxo = as.data.frame(merged_table[,(dim(CT)[2]+2):dim(merged_table)[2]])
+      #     
+      #     rownames(CT) = merged_table[,1]
+      #     rownames(taxo) = merged_table[,1]
+      #     #ordOTU = order(rownames(taxo))
+      #     counts_annot = CT
+      #       ordOTU = order(rownames(taxo))
+      #       indOTU_annot = which(rownames(CT)%in%rownames(taxo))
+      #       counts_annot = CT[indOTU_annot[ordOTU],]
+      ## Aggregate matrix
+      if(taxoSelect=="OTU/Gene") counts = counts_annot
+      else{
+        if(input$TypeTable == "MGS" && input$FileFormat!="fileBiom"){
+          MGS_taxocol = which(toupper(colnames(taxo))%in%"MGS")
+          taxoS = taxo[,MGS_taxocol]
+          counts = aggregate(counts_annot,by=list(Taxonomy = taxoS),mean)
+          rownames(counts)=counts[,1]
+          counts=counts[,-1]
+          counts_int=t(apply(counts,1,as.integer))
+          rownames(counts_int)=rownames(counts)
+          colnames(counts_int)=colnames(counts)
+          counts=counts_int
+        }
+        if(taxoSelect != "MGS" || input$FileFormat=="fileBiom"){
+          #taxoS = taxo[ordOTU,taxoSelect]
+          taxoS = taxo[,taxoSelect]
+          counts = aggregate(counts_annot,by=list(Taxonomy = taxoS),sum)
+          rownames(counts)=counts[,1];counts=counts[,-1]
+        }
       }
-      if(taxoSelect != "MGS" || input$FileFormat=="fileBiom"){
-        #taxoS = taxo[ordOTU,taxoSelect]
-        taxoS = taxo[,taxoSelect]
-        counts = aggregate(counts_annot,by=list(Taxonomy = taxoS),sum)
-        rownames(counts)=counts[,1];counts=counts[,-1]
-      }
+      
+      ## Ordering the counts table according to the target labels 
+      tmpOrder = OrderCounts(counts,normFactors,labels)
+      counts = tmpOrder$CountsOrder
+      normFactors = tmpOrder$normFactorsOrder
+      CheckTarget = TRUE
     }
-    
-    ## Ordering the counts table according to the target labels 
-    tmpOrder = OrderCounts(counts,normFactors,labels)
-    counts = tmpOrder$CountsOrder
-    normFactors = tmpOrder$normFactorsOrder
-    CheckTarget = TRUE
   }
-  return(list(counts=counts,CheckTarget=CheckTarget,normFactors=normFactors, CT_noNorm=CT_noNorm, CT_Norm =CT_Norm))
+  return(list(counts=counts,CheckTarget=CheckTarget,normFactors=normFactors, CT_noNorm=CT_noNorm, CT_Norm =CT_Norm, Error = Error))
   #return(list(counts=counts,target=target[ind,],labeled=labeled,normFactors=normFactors, CT_noNorm=CT_noNorm))
 }
 
